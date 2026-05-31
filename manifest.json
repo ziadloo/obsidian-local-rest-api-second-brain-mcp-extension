@@ -1,7 +1,7 @@
 {
 	"id": "local-rest-api-second-brain-mcp-extension",
 	"name": "Local REST API Second Brain MCP Extension",
-	"version": "1.0.8",
+	"version": "1.0.9",
 	"minAppVersion": "1.4.0",
 	"description": "Extension for Local REST API plugin to add second brain MCP server.",
 	"author": "Mehran Ziadloo",
