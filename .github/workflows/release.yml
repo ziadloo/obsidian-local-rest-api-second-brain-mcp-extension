@@ -21,10 +21,26 @@ jobs:
         with:
           node-version: "20.x"
 
-      - name: Build plugin
+      - name: Build standard plugin
         run: |
           npm install
           npm run build
+          mkdir standard-release
+          cp main.js manifest.json styles.css standard-release/
+
+      - name: Build native plugin
+        run: |
+          npm run build:native
+          mkdir obsidian-local-rest-api-second-brain-mcp-extension-native
+          cp main.js manifest.json styles.css obsidian-local-rest-api-second-brain-mcp-extension-native/
+          
+          # Prune devDependencies so the zip isn't massive
+          npm ci --omit=dev
+          cp -r node_modules obsidian-local-rest-api-second-brain-mcp-extension-native/
+          
+      - name: Package native zip
+        run: |
+          zip -r "obsidian-local-rest-api-second-brain-mcp-extension-native-${tag_name}.zip" obsidian-local-rest-api-second-brain-mcp-extension-native/
 
       - name: Create Release
         env:
@@ -35,4 +51,7 @@ jobs:
             --title="$tag_name" \
             --draft=false \
             --prerelease=false \
-            main.js manifest.json styles.css
+            standard-release/main.js \
+            standard-release/manifest.json \
+            standard-release/styles.css \
+            "obsidian-local-rest-api-second-brain-mcp-extension-native-${tag_name}.zip"

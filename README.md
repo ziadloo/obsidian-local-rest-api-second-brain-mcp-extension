@@ -23,8 +23,21 @@ This **Second Brain MCP Extension** builds on top of that infrastructure:
 * It does **not** manage its own web servers or authentication; it securely registers a new route (`/second-brain-mcp/`) using the parent plugin's API.
 * While the parent plugin is designed for general-purpose file manipulation (CRUD operations), this extension is specifically engineered for **AI knowledge retrieval**. It abstracts away raw files and instead provides MCP tools (`query_wiki`, `get_wiki`, `wiki_card`) tailored for agentic workflows, complete with semantic ranking and graph exploration.
 
-## Manual Installation
+## Installation via GitHub Releases
 
+When downloading this plugin from the GitHub Releases page, you will notice two different sets of artifacts available for every release version. They are explicitly separated so they do not contaminate each other:
+
+1. **Standard Artifacts (`main.js`, `manifest.json`, `styles.css`)**
+   * These are the loose files meant for standard Obsidian usage. 
+   * **How to install:** Create a folder named `obsidian-local-rest-api-second-brain-api-extension` inside your vault's `.obsidian/plugins/` directory, and place these three files inside it.
+   * **Use case:** Maximum safety and compatibility across all platforms (Single Core execution).
+
+2. **Native Artifact (`native.zip`)**
+   * This zip file contains a pre-configured plugin directory (`obsidian-local-rest-api-second-brain-mcp-extension-native`) which includes the `main.js`, `manifest.json`, and `styles.css`, but critically includes a pruned `node_modules` directory containing pre-compiled C++ binaries.
+   * **How to install:** Extract the contents of this zip file directly into your vault's `.obsidian/plugins/` directory. It will automatically create the properly named plugin folder for you.
+   * **Use case:** Power users who want to unlock maximum multi-core CPU performance for indexing. (See "Performance Notes" below).
+
+## Manual Installation
 1. Fork this repository.
 2. Update `main.ts` to advertise your new route(s).
 3. Build the project with `npm run build` (or `npm run dev` if you are iterating on some changes).
