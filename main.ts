@@ -842,7 +842,21 @@ export default class ObsidianLocalRESTAPISecondBrainPlugin extends Plugin {
 				localLog(`[Second Brain MCP] Initializing search engine with model: ${modelToLoad}`);
 
 				localLog(`[Second Brain MCP] Requiring @huggingface/transformers`);
-				const tfModule = require("@huggingface/transformers");
+				let tfModule;
+				try {
+					tfModule = require("@huggingface/transformers");
+				} catch (reqErr) {
+					if (process.env.IS_NATIVE_BUILD === "true") {
+						const path = require("path");
+						const basePath = (this.app.vault.adapter as any).getBasePath();
+						const pluginDir = this.manifest.dir;
+						const modulePath = path.join(basePath, pluginDir, "node_modules", "@huggingface", "transformers");
+						localLog(`[Second Brain MCP] Failed to require by module name. Trying absolute path: ${modulePath}`);
+						tfModule = require(modulePath);
+					} else {
+						throw reqErr;
+					}
+				}
 				localLog(`[Second Brain MCP] tfModule keys: ${Object.keys(tfModule).join(", ")}`);
 
 				const pipeline = tfModule.pipeline || (tfModule as any).default?.pipeline;
@@ -869,7 +883,11 @@ export default class ObsidianLocalRESTAPISecondBrainPlugin extends Plugin {
 				}
 
 				// Load feature-extraction pipeline (forced to CPU due to WebGPU unavailability and caching bugs)
-				localLog(`[Second Brain MCP] Initializing pipeline on CPU...`);
+				if (process.env.IS_NATIVE_BUILD === "true") {
+					localLog(`[Second Brain MCP] Initializing pipeline in Native Multi-Core mode...`);
+				} else {
+					localLog(`[Second Brain MCP] Initializing pipeline in Pure JS Compatibility mode (Single Core)...`);
+				}
 				this.extractor = await pipeline("feature-extraction", modelToLoad, { device: "cpu" });
 				localLog("[Second Brain MCP] Transformer model loaded successfully.");
 

@@ -32,4 +32,28 @@ This **Second Brain MCP Extension** builds on top of that infrastructure:
 
 ## Performance Notes
 
-Due to strict browser security constraints within Obsidian's Electron environment (specifically the disabling of `SharedArrayBuffer`), WebAssembly multi-threading is completely blocked. Furthermore, the Hugging Face WebGPU backend is currently unsupported or highly unstable in this context. Consequently, this plugin is forced to rely on a single CPU core for embedding generation to remain a safe, cross-platform Community Plugin. While the initial indexing of your vault may take some time, all generated embeddings are cached locally, ensuring that all subsequent queries are lightning fast.
+Due to strict browser security constraints within Obsidian's Electron environment (specifically the disabling of `SharedArrayBuffer`), WebAssembly multi-threading is completely blocked. Furthermore, the Hugging Face WebGPU backend is currently unsupported or highly unstable in this context. Consequently, the default build of this plugin is forced to rely on a single CPU core for embedding generation to remain a safe, pure-JavaScript cross-platform plugin suitable for the Community Directory.
+
+While the initial indexing of your vault may take some time in single-core mode, all generated embeddings are cached locally, ensuring that all subsequent queries are lightning fast.
+
+### Unlocking Multi-Core Performance (Native Build)
+
+If you are running this plugin locally and want to bypass Obsidian's browser sandbox to unlock full multi-core CPU performance for indexing, this project features a dual-build architecture.
+
+By running the native build command, the plugin will compile using the native `onnxruntime-node` C++ binary instead of WebAssembly, restoring full multi-threading:
+
+1. Build the native bundle:
+   ```bash
+   npm run build:native
+   ```
+2. Because the native C++ binaries cannot be bundled into a single `main.js` file, you must copy the local `node_modules` dependencies into your vault's plugin folder so the plugin can resolve them at runtime:
+   ```bash
+   cp -r node_modules/ /path/to/your/vault/.obsidian/plugins/obsidian-local-rest-api-second-brain-api-extension/
+   ```
+3. Restart Obsidian. The plugin will detect the native build and log `Initializing pipeline in Native Multi-Core mode...` in your developer console.
+
+**Standard Build Commands:**
+* `npm run build`: Compiles the standard, pure-JS, single-core package for Obsidian community distribution.
+* `npm run dev`: Watches files and builds the standard package on changes.
+* `npm run build:native`: Compiles the high-performance, multi-core native package.
+* `npm run dev:native`: Watches files and builds the native package on changes.

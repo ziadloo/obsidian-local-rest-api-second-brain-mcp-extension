@@ -10,6 +10,28 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+const isNativeBuild = process.env.BUILD_TARGET === 'native';
+
+const externalDeps = [
+	"obsidian",
+	"electron",
+	"@codemirror/autocomplete",
+	"@codemirror/collab",
+	"@codemirror/commands",
+	"@codemirror/language",
+	"@codemirror/lint",
+	"@codemirror/search",
+	"@codemirror/state",
+	"@codemirror/view",
+	"@lezer/common",
+	"@lezer/highlight",
+	"@lezer/lr",
+	...builtins
+];
+
+if (isNativeBuild) {
+	externalDeps.push("@huggingface/transformers", "onnxruntime-node");
+}
 
 const context = await esbuild.context({
 	banner: {
@@ -17,24 +39,13 @@ const context = await esbuild.context({
 	},
 	entryPoints: ["main.ts"],
 	bundle: true,
-	alias: {
+	alias: isNativeBuild ? {} : {
 		"onnxruntime-node": "onnxruntime-web"
 	},
-	external: [
-		"obsidian",
-		"electron",
-		"@codemirror/autocomplete",
-		"@codemirror/collab",
-		"@codemirror/commands",
-		"@codemirror/language",
-		"@codemirror/lint",
-		"@codemirror/search",
-		"@codemirror/state",
-		"@codemirror/view",
-		"@lezer/common",
-		"@lezer/highlight",
-		"@lezer/lr",
-		...builtins],
+	external: externalDeps,
+	define: {
+		"process.env.IS_NATIVE_BUILD": isNativeBuild ? '"true"' : '"false"'
+	},
 	format: "cjs",
 	target: "es2022",
 	platform: "node",
