@@ -36,7 +36,7 @@ jobs:
           
           # Prune devDependencies so the zip isn't massive
           npm ci --omit=dev
-          cp -r node_modules obsidian-local-rest-api-second-brain-mcp-extension-native/
+          cp -rL node_modules obsidian-local-rest-api-second-brain-mcp-extension-native/
           
       - name: Package native zip
         run: |

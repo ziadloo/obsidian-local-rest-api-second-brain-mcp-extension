@@ -61,7 +61,7 @@ By running the native build command, the plugin will compile using the native `o
    ```
 2. Because the native C++ binaries cannot be bundled into a single `main.js` file, you must copy the local `node_modules` dependencies into your vault's plugin folder so the plugin can resolve them at runtime:
    ```bash
-   cp -r node_modules/ /path/to/your/vault/.obsidian/plugins/obsidian-local-rest-api-second-brain-api-extension/
+   cp -rL node_modules/ /path/to/your/vault/.obsidian/plugins/obsidian-local-rest-api-second-brain-api-extension/
    ```
 3. Restart Obsidian. The plugin will detect the native build and log `Initializing pipeline in Native Multi-Core mode...` in your developer console.
 
