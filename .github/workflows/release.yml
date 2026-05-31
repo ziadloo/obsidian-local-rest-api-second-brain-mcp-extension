@@ -40,6 +40,7 @@ jobs:
           
       - name: Package native zip
         run: |
+          tag_name="${GITHUB_REF#refs/tags/}"
           zip -r "obsidian-local-rest-api-second-brain-mcp-extension-native-${tag_name}.zip" obsidian-local-rest-api-second-brain-mcp-extension-native/
 
       - name: Create Release
