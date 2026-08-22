@@ -535,12 +535,20 @@ export default class ObsidianLocalRESTAPISecondBrainPlugin extends Plugin {
 							interface TraversedItem {
 								path: string;
 								content: string;
-								connections: { path: string; content: string }[];
+								// `content: null` means this page's body was already emitted earlier in
+								// the result; only the path is repeated, so the graph edge is preserved
+								// without duplicating the document.
+								connections: { path: string; content: string | null }[];
 							}
 							const traversedItems: TraversedItem[] = [];
 
+							// Every unique page whose body has been emitted. `total_limit` is documented
+							// as a strict cap on total unique pages returned, so connections have to
+							// count against it too, not just the BFS roots.
+							const emittedPaths = new Set<string>();
+
 							// BFS Traversal Loop
-							while (queue.length > 0 && traversedItems.length < total_limit) {
+							while (queue.length > 0 && emittedPaths.size < total_limit) {
 								const currentNode = queue.shift()!;
 								const normPath = currentNode.file.path.replace(/\\/g, "/");
 
@@ -632,17 +640,42 @@ export default class ObsidianLocalRESTAPISecondBrainPlugin extends Plugin {
 									}
 								}
 
-								// Map the immediate traversed connections content
-								const connections: { path: string; content: string }[] = [];
-								for (const connFile of selectedConns) {
-									try {
-										const connContent = await this.app.vault.cachedRead(connFile);
-										connections.push({
-											path: connFile.path.replace(/\\/g, "/"),
-											content: connContent
-										});
-									} catch (err) {
-										// Ignore read errors for connections
+								emittedPaths.add(normPath);
+
+								// Map the immediate traversed connections content.
+								//
+								// Only emit connection bodies when this node is actually allowed to
+								// expand. Previously these were attached unconditionally, so
+								// `depth_limit: 0` -- documented as "root nodes only" -- still returned
+								// `branch_factor` full documents per root.
+								const connections: { path: string; content: string | null }[] = [];
+								if (currentNode.depth < depth_limit) {
+									for (const connFile of selectedConns) {
+										const connNormPath = connFile.path.replace(/\\/g, "/");
+
+										// Already emitted somewhere above: keep the edge, drop the body.
+										// Without this a densely linked vault returns the same document
+										// once per node that links to it, which is how a three-root query
+										// can exceed a client's response size limit.
+										if (emittedPaths.has(connNormPath)) {
+											connections.push({ path: connNormPath, content: null });
+											continue;
+										}
+
+										if (emittedPaths.size >= total_limit) {
+											break;
+										}
+
+										try {
+											const connContent = await this.app.vault.cachedRead(connFile);
+											emittedPaths.add(connNormPath);
+											connections.push({
+												path: connNormPath,
+												content: connContent
+											});
+										} catch (err) {
+											// Ignore read errors for connections
+										}
 									}
 								}
 
@@ -669,6 +702,10 @@ export default class ObsidianLocalRESTAPISecondBrainPlugin extends Plugin {
 									yamlResult += `  connections:\n`;
 									for (const conn of item.connections) {
 										yamlResult += `    - path: ${conn.path}\n`;
+										if (conn.content === null) {
+											yamlResult += `      repeated: true\n`;
+											continue;
+										}
 										const connLines = conn.content.split("\n");
 										yamlResult += `      content: |\n`;
 										for (const line of connLines) {
